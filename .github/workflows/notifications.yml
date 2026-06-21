@@ -2,10 +2,10 @@ name: Send Reminder Notifications
 
 on:
   schedule:
-    # Task reminders — every day at 7:00 PM Pakistan time (UTC+5) = 14:00 UTC
-    - cron: '0 14 * * *'
-    # Quiz reminders — every day at 8:00 PM PKT = 15:00 UTC
-    - cron: '0 15 * * *'
+    # Task reminders — every day at 1:30 PM Pakistan time (UTC+5) = 08:30 UTC
+    - cron: '30 8 * * *'
+    # Quiz reminders — every day at 1:15 PM PKT = 08:15 UTC
+    - cron: '15 8 * * *'
     # Weekly report — every Sunday at 9:00 PM PKT = 16:00 UTC on Sunday
     - cron: '0 16 * * 0'
   workflow_dispatch:        # lets you manually trigger from GitHub UI for testing
@@ -36,11 +36,14 @@ jobs:
             echo "value=${{ github.event.inputs.reminder_type }}" >> $GITHUB_OUTPUT
           else
             HOUR_UTC=$(date -u +%H)
+            MIN_UTC=$(date -u +%M)
             DOW=$(date -u +%u)  # 7 = Sunday
             if [ "$HOUR_UTC" = "16" ] && [ "$DOW" = "7" ]; then
               echo "value=weekly" >> $GITHUB_OUTPUT
-            elif [ "$HOUR_UTC" = "15" ]; then
+            elif [ "$HOUR_UTC" = "08" ] && [ "$MIN_UTC" = "15" ]; then
               echo "value=quiz" >> $GITHUB_OUTPUT
+            elif [ "$HOUR_UTC" = "08" ] && [ "$MIN_UTC" = "30" ]; then
+              echo "value=task" >> $GITHUB_OUTPUT
             else
               echo "value=task" >> $GITHUB_OUTPUT
             fi
