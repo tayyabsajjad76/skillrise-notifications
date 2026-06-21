@@ -1,0 +1,54 @@
+name: Send Reminder Notifications
+
+on:
+  schedule:
+    # Task reminders — every day at 7:00 PM Pakistan time (UTC+5) = 14:00 UTC
+    - cron: '0 14 * * *'
+    # Quiz reminders — every day at 8:00 PM PKT = 15:00 UTC
+    - cron: '0 15 * * *'
+    # Weekly report — every Sunday at 9:00 PM PKT = 16:00 UTC on Sunday
+    - cron: '0 16 * * 0'
+  workflow_dispatch:        # lets you manually trigger from GitHub UI for testing
+    inputs:
+      reminder_type:
+        description: 'Which reminder to send (task, quiz, weekly)'
+        required: true
+        default: 'task'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./
+
+      - name: Determine reminder type from schedule
+        id: type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ github.event.inputs.reminder_type }}" >> $GITHUB_OUTPUT
+          else
+            HOUR_UTC=$(date -u +%H)
+            DOW=$(date -u +%u)  # 7 = Sunday
+            if [ "$HOUR_UTC" = "16" ] && [ "$DOW" = "7" ]; then
+              echo "value=weekly" >> $GITHUB_OUTPUT
+            elif [ "$HOUR_UTC" = "15" ]; then
+              echo "value=quiz" >> $GITHUB_OUTPUT
+            else
+              echo "value=task" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Run notification script
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          REMINDER_TYPE: ${{ steps.type.outputs.value }}
+        run: node send-notifications.js

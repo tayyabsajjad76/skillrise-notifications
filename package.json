@@ -1,0 +1,12 @@
+{
+  "name": "skillrise-notifications",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "send": "node send-notifications.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "resend": "^3.2.0"
+  }
+}
